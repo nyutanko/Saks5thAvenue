@@ -103,24 +103,16 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
       logger.info('Scrolling page')
 
       //await autoScroll(page)
-      async function autoScrollTo (page,i) {
-        await page.evaluate(async (i) => {
+      async function autoScrollTo (page) {
+        await page.evaluate(async () => {
           window.scrollTo({
-            top: 4000 + 3500*i,
-            behavior: "smooth"
+            top: 9000,
+            behavior: "instant"
           })
-        },i)
+        })
       }
 
-      await autoScrollTo(page, 0)
-      await page.waitForTimeout(3000)
-      await autoScrollTo(page, 1)
-      await page.waitForTimeout(3000)
-      await autoScrollTo(page, 2)
-      await page.waitForTimeout(3000)
-      await autoScrollTo(page, 3)
-      await page.waitForTimeout(3000)
-      await autoScrollTo(page, 4)
+      await autoScrollTo(page)
       await page.waitForSelector('p.page-item.d-flex.next')
 
       // function to get a number of the last page
@@ -138,14 +130,14 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
 
       // parsing data for every page
 
-      while (counter !== lastPage) {
+      while (counter !== 2) {
         // function to get pid for every item
 
         const pids = await page.evaluate(async () => {
           const page_1 = []
 
           try {
-            const divs = document.querySelectorAll('div.product-tile-section.col-sm-12.col-md-9')
+            const divs = document.querySelectorAll('div.col-6.col-sm-4.col-xl-3.wishlist-prod-tile')
             divs.forEach(div => {
               const obj = {
                 pid: div.querySelector('a.product-brand.adobelaunch__brand').dataset.adobelaunchproductid
@@ -207,10 +199,9 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
 
         await res.flat()
 
-        await page.waitForSelector('p.page-item.d-flex.next')
         await page.click('p.page-item.d-flex.next')
-        await page.waitForSelector('div.product-tile-section.col-sm-12.col-md-9')
-        await page.waitForTimeout(6000)
+        await page.waitForSelector('#maincontent > div.container.search-results.hide-designer-on-cat > div > div > div.row.search-result-wrapper.tile-descriptions > div.product-tile-section.col-sm-12.col-md-9 > div.row.product-grid > div:nth-child(27)')
+        //await page.waitForTimeout(4000)
         counter++
         logger.info('Page: ' + (counter + 1))
         logger.info('Scrolling page')
@@ -237,5 +228,5 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
     }
   }
   await parse(linkW)
-  await parse(linkM)
+ // await parse(linkM)
 })()
