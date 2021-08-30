@@ -2,6 +2,7 @@ const puppeteer = require('puppeteer')
 const converter = require('json-2-csv')
 const fs = require('fs')
 const winston = require('winston')
+const moment = require('moment')
 
 const logger = winston.createLogger({
   level: 'info',
@@ -114,9 +115,8 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
             return data
           }, linkProd)
 
-          console.log(doc.product.attributes[4].attributes)
-
           const obj = {
+            /*
             uuid: doc.product.uuid !== null
               ? doc.product.uuid
               : 'No uuid',
@@ -138,6 +138,9 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
             subCategory: doc.product.attributes[4].attributes[doc.product.attributes[4].attributes.length - 1] !== undefined
               ? doc.product.attributes[4].attributes[doc.product.attributes[4].attributes.length - 1]
               : 'No SubCategory'
+             */
+
+            allInfo: doc.product
 
           }
 
@@ -146,33 +149,51 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
 
         await res.flat()
 
-        await page.click('p.page-item.d-flex.next')
-        await page.waitForSelector('#maincontent > div.container.search-results.hide-designer-on-cat > div > div > div.row.search-result-wrapper.tile-descriptions > div.product-tile-section.col-sm-12.col-md-9 > div.row.product-grid > div:nth-child(27)')
-        counter++
-        logger.info('Page: ' + (counter + 1))
-        logger.info('Scrolling page')
-        await autoScrollTo(page)
-        await page.waitForSelector('p.page-item.d-flex.next')
+        if(counter < lastPage - 1) {
+          await page.click('p.page-item.d-flex.next')
+          await page.waitForSelector('#maincontent > div.container.search-results.hide-designer-on-cat > div > div > div.row.search-result-wrapper.tile-descriptions > div.product-tile-section.col-sm-12.col-md-9 > div.row.product-grid > div:nth-child(27)')
+          counter++
+          logger.info('Page: ' + (counter + 1))
+          logger.info('Scrolling page')
+          await autoScrollTo(page)
+          await page.waitForSelector('p.page-item.d-flex.next')
+        } else {
+          counter++
+        }
       }
 
       await browser.close()
 
-      converter.json2csv(res, (err, csv) => {
-        if (err) {
-          throw err
-        }
+      /*
+            converter.json2csv(res, (err, csv) => {
+              if (err) {
+                throw err
+              }
 
-        const dateFilename = 'clothes_' + new Date().toJSON().slice(0, 10) + '_' + new Date().toJSON().slice(11, 19) + '.csv'
-        const filename = dateFilename.replace(/[:]/g, '-')
+              const dateFilename = 'clothes_' + moment().format('DD-MM-YYYY') + '_' + moment().format('hh-mm-ss') + '.csv'
+              const filename = dateFilename.replace(/[:]/g, '-')
 
-        fs.writeFileSync(filename, csv)
+              fs.writeFileSync(filename, csv)
 
-        logger.info('Data saved')
-      })
+              logger.info('Data saved')
+            })
+       */
+
     } catch (e) {
       logger.info(e)
     }
   }
   await parse(linkW)
   await parse(linkM)
+
+  const dateFilename = 'clothes_' + moment().format('DD-MM-YYYY') + '_' + moment().format('hh-mm-ss') + '.json'
+  const filename = dateFilename.replace(/[:]/g, '-')
+
+  fs.writeFile(filename, JSON.stringify(res, null,'\t'), err =>{
+    if (err) {
+      throw err
+    }
+    logger.info('Data saved')
+  })
+
 })()
