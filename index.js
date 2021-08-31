@@ -74,7 +74,7 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
 
       // parsing data for every page
 
-      while (counter !== lastPage) {
+      while (counter !== 2) {
         // function to get pid for every item
 
         const pids = await page.evaluate(async () => {
@@ -124,7 +124,7 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
 
         await res.flat()
 
-        if (counter < lastPage - 1) {
+        if (counter < 1) {
           await page.click('p.page-item.d-flex.next')
           await page.waitForSelector('#maincontent > div.container.search-results.hide-designer-on-cat > div > div > div.row.search-result-wrapper.tile-descriptions > div.product-tile-section.col-sm-12.col-md-9 > div.row.product-grid > div:nth-child(27)')
           counter++
@@ -142,7 +142,7 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
     }
   }
   await parse(linkW)
-  await parse(linkM)
+  //await parse(linkM)
 
   const results = []
   const searchFieldType = 'label'
@@ -199,7 +199,8 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
       vendor_name: res[i].allInfo.brand.name,
       product_line: TypeRefinement(res[i].allInfo.attributes[4].attributes),
       origin_country: CountryOfOrigin(res[i].allInfo.attributes[6].attributes),
-      instock_num: InStock(res[i].allInfo.variationAttributes[1].values),
+      instock_num: res[i].allInfo.numberOfInStockItems,
+      in_stock: InStock(res[i].allInfo.variationAttributes[1].values),
       out_of_stock: OutOfStock(res[i].allInfo.variationAttributes[1].values),
       cost_price: res[i].allInfo.price.sales !== undefined
         ? res[i].allInfo.price.sales.value
