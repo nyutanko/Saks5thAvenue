@@ -74,7 +74,7 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
 
       // parsing data for every page
 
-      while (counter !== 2) {
+      while (counter !== lastPage) {
         // function to get pid for every item
 
         const pids = await page.evaluate(async () => {
@@ -124,7 +124,7 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
 
         await res.flat()
 
-        if (counter < 1) {
+        if (counter < lastPage - 1) {
           await page.click('p.page-item.d-flex.next')
           await page.waitForSelector('#maincontent > div.container.search-results.hide-designer-on-cat > div > div > div.row.search-result-wrapper.tile-descriptions > div.product-tile-section.col-sm-12.col-md-9 > div.row.product-grid > div:nth-child(27)')
           counter++
@@ -142,7 +142,7 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
     }
   }
   await parse(linkW)
-  //await parse(linkM)
+  await parse(linkM)
 
   const results = []
   const searchFieldType = 'label'
