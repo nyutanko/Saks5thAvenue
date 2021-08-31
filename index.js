@@ -51,7 +51,7 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
         await page.evaluate(async () => {
           window.scrollTo({
             top: 9000,
-            behavior: "instant"
+            behavior: 'instant'
           })
         })
       }
@@ -89,7 +89,7 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
               page_1.push(obj)
             })
           } catch (e) {
-             logger.info(e)
+            logger.info(e)
           }
           return page_1
         })
@@ -116,32 +116,7 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
           }, linkProd)
 
           const obj = {
-            /*
-            uuid: doc.product.uuid !== null
-              ? doc.product.uuid
-              : 'No uuid',
-            productName: doc.product.productName !== null
-              ? doc.product.productName
-              : 'No name',
-            price: doc.product.price.sales !== undefined
-              ? doc.product.price.sales.value
-              : doc.product.price.max.sales.value,
-            brand: doc.product.brand.name !== null
-              ? doc.product.brand.name
-              : 'No brand',
-            material: doc.product.attributes[4].attributes !== undefined
-              ? doc.product.attributes[4].attributes[3]
-              : 'No material',
-            topCategory: doc.product.attributes[4].attributes[0] !== undefined
-              ? doc.product.attributes[4].attributes[0].value[0]
-              : 'No TopCategory',
-            subCategory: doc.product.attributes[4].attributes[doc.product.attributes[4].attributes.length - 1] !== undefined
-              ? doc.product.attributes[4].attributes[doc.product.attributes[4].attributes.length - 1]
-              : 'No SubCategory'
-             */
-
             allInfo: doc.product
-
           }
 
           await res.push(obj)
@@ -149,7 +124,7 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
 
         await res.flat()
 
-        if(counter < lastPage - 1) {
+        if (counter < lastPage - 1) {
           await page.click('p.page-item.d-flex.next')
           await page.waitForSelector('#maincontent > div.container.search-results.hide-designer-on-cat > div > div > div.row.search-result-wrapper.tile-descriptions > div.product-tile-section.col-sm-12.col-md-9 > div.row.product-grid > div:nth-child(27)')
           counter++
@@ -161,24 +136,7 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
           counter++
         }
       }
-
       await browser.close()
-
-      /*
-            converter.json2csv(res, (err, csv) => {
-              if (err) {
-                throw err
-              }
-
-              const dateFilename = 'clothes_' + moment().format('DD-MM-YYYY') + '_' + moment().format('hh-mm-ss') + '.csv'
-              const filename = dateFilename.replace(/[:]/g, '-')
-
-              fs.writeFileSync(filename, csv)
-
-              logger.info('Data saved')
-            })
-       */
-
     } catch (e) {
       logger.info(e)
     }
@@ -186,14 +144,82 @@ const linkM = 'https://www.saksfifthavenue.com/c/men/apparel';
   await parse(linkW)
   await parse(linkM)
 
-  const dateFilename = 'clothes_' + moment().format('DD-MM-YYYY') + '_' + moment().format('hh-mm-ss') + '.json'
-  const filename = dateFilename.replace(/[:]/g, '-')
+  const results = []
+  const searchFieldType = 'label'
+  const searchValType = 'Type refinement'
 
-  fs.writeFile(filename, JSON.stringify(res, null,'\t'), err =>{
+  function TypeRefinement (arr) {
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i][searchFieldType] === searchValType) {
+        return arr[i].value[0]
+      }
+    }
+  }
+
+  const searchFieldCountry = 'label'
+  const searchValCountry = 'country of origin'
+
+  function CountryOfOrigin (arr) {
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i][searchFieldCountry] === searchValCountry) {
+        return arr[i].value[0]
+      }
+    }
+  }
+
+  const searchFieldStatus = 'variantAvailabilityStatus'
+  const searchValIn = 'IN_STOCK'
+
+  function InStock (arr) {
+    const inStockResults = []
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i][searchFieldStatus] === searchValIn) {
+        inStockResults.push(arr[i].value)
+      }
+    }
+    return inStockResults.join(', ')
+  }
+
+  const searchValOut = 'NOT_AVAILABLE'
+
+  function OutOfStock (arr) {
+    const outStockResults = []
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i][searchFieldStatus] === searchValOut) {
+        outStockResults.push(arr[i].value)
+      }
+    }
+    return outStockResults.join(', ')
+  }
+
+  for (let i = 0; i < res.length; i++) {
+    const object = {
+      pid: res[i].allInfo.id,
+      item_name: res[i].allInfo.productName,
+      vendor_name: res[i].allInfo.brand.name,
+      product_line: TypeRefinement(res[i].allInfo.attributes[4].attributes),
+      origin_country: CountryOfOrigin(res[i].allInfo.attributes[6].attributes),
+      instock_num: InStock(res[i].allInfo.variationAttributes[1].values),
+      out_of_stock: OutOfStock(res[i].allInfo.variationAttributes[1].values),
+      cost_price: res[i].allInfo.price.sales !== undefined
+        ? res[i].allInfo.price.sales.value
+        : res[i].allInfo.price.max.sales.value + '-' + res[i].allInfo.price.min.sales.value,
+      item_url: res[i].allInfo.pdpURL,
+      url: res[i].allInfo.images.small[0].url
+    }
+    await results.push(object)
+  }
+
+  converter.json2csv(results, (err, csv) => {
     if (err) {
       throw err
     }
+
+    const dateFilename = 'clothes_' + moment().format('DD-MM-YYYY') + '_' + moment().format('hh-mm-ss') + '.csv'
+    const filename = dateFilename.replace(/[:]/g, '-')
+
+    fs.writeFileSync(filename, csv)
+
     logger.info('Data saved')
   })
-
 })()
